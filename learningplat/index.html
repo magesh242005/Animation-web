@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SkillHub - Learn Skills Visually. Grow Digitally.</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <div class="logo" onclick="navigateTo('home')">SkillHub</div>
+            <div class="nav-menu">
+                <div class="nav-links">
+                    <a onclick="navigateTo('home')">Home</a>
+                    <a onclick="navigateTo('courses')">Courses</a>
+                    <a onclick="navigateTo('dashboard')">Dashboard</a>
+                    <a onclick="navigateTo('about')">About</a>
+                </div>
+                <button class="mode-toggle" onclick="toggleDarkMode()">🌙 Mode</button>
+            </div>
+        </div>
+    </header>
+
+    <main id="app"></main>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4>Platform</h4>
+                <a href="#">Courses</a>
+                <a href="#">Instructors</a>
+                <a href="#">Certificates</a>
+            </div>
+            <div class="footer-section">
+                <h4>Company</h4>
+                <a href="#">About Us</a>
+                <a href="#">Contact</a>
+                <a href="#">Blog</a>
+            </div>
+            <div class="footer-section">
+                <h4>Legal</h4>
+                <a href="#">Terms of Service</a>
+                <a href="#">Privacy Policy</a>
+            </div>
+            <div class="footer-section">
+                <h4>Follow Us</h4>
+                <a href="#">Twitter</a>
+                <a href="#">LinkedIn</a>
+                <a href="#">Instagram</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2025 SkillHub. All rights reserved. | Learn Skills Visually. Grow Digitally.</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

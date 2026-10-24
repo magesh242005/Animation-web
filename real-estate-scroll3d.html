@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APEX Towers — Live Where the Sky Begins</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@200;300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#080A0F;
+  --white:#F0EDE8;
+  --gold:#D4A853;
+  --gold2:#E8C97A;
+  --blue:#3A7BD5;
+  --muted:rgba(240,237,232,0.45);
+  --glass:rgba(240,237,232,0.06);
+}
+html{scroll-behavior:auto}
+body{
+  background:var(--bg);
+  color:var(--white);
+  font-family:'DM Sans',sans-serif;
+  font-weight:300;
+  overflow-x:hidden;
+}
+
+/* NAV */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:1000;
+  padding:22px 60px;
+  display:flex;align-items:center;justify-content:space-between;
+  transition:background 0.4s;
+}
+nav.scrolled{background:rgba(8,10,15,0.92);backdrop-filter:blur(20px);border-bottom:1px solid rgba(212,168,83,0.1)}
+.logo{font-family:'Playfair Display',serif;font-size:22px;letter-spacing:3px;color:var(--gold);text-transform:uppercase}
+.logo span{font-style:italic;color:var(--white)}
+.nav-links{display:flex;gap:36px;list-style:none}
+.nav-links a{color:rgba(240,237,232,0.55);text-decoration:none;font-size:12px;letter-spacing:2px;text-transform:uppercase;transition:color 0.3s}
+.nav-links a:hover{color:var(--gold)}
+.nav-btn{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--bg);background:var(--gold);border:none;padding:10px 26px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:500;transition:opacity 0.3s}
+.nav-btn:hover{opacity:0.85}
+
+/* ── STICKY SCROLL CONTAINER ── */
+#scroll-container{
+  position:relative;
+  height:600vh; /* tall page = scroll fuel */
+}
+#sticky-scene{
+  position:sticky;
+  top:0;
+  height:100vh;
+  overflow:hidden;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+/* Canvas fills sticky scene */
+#building-canvas{
+  position:absolute;
+  inset:0;
+  width:100%;height:100%;
+}
+
+/* SCROLL TEXT PANELS — absolutely positioned, appear/disappear via opacity */
+.scroll-panel{
+  position:absolute;
+  opacity:0;
+  pointer-events:none;
+  transform:translateY(20px);
+  transition:opacity 0.6s ease, transform 0.6s ease;
+  z-index:10;
+}
+.scroll-panel.active{
+  opacity:1;
+  pointer-events:auto;
+  transform:translateY(0);
+}
+
+/* Panel positions */
+#panel-0{top:50%;left:50%;transform:translate(-50%,-50%) translateY(20px);text-align:center;width:700px}
+#panel-0.active{transform:translate(-50%,-50%) translateY(0)}
+#panel-1{top:50%;left:10%;transform:translateY(calc(-50% + 20px));max-width:420px}
+#panel-1.active{transform:translateY(-50%)}
+#panel-2{top:50%;right:10%;transform:translateY(calc(-50% + 20px));max-width:400px;text-align:right}
+#panel-2.active{transform:translateY(-50%)}
+#panel-3{top:50%;left:50%;transform:translate(-50%,calc(-50% + 20px));text-align:center;width:640px}
+#panel-3.active{transform:translate(-50%,-50%)}
+#panel-4{bottom:10%;left:50%;transform:translateX(-50%) translateY(20px);text-align:center;width:800px}
+#panel-4.active{transform:translateX(-50%) translateY(0)}
+
+.eyebrow{font-size:10px;letter-spacing:5px;text-transform:uppercase;color:var(--gold);margin-bottom:18px;display:flex;align-items:center;gap:14px;justify-content:inherit}
+.eyebrow::before,.eyebrow::after{content:'';height:1px;flex:0 0 40px;background:var(--gold);opacity:0.4}
+.panel-h{font-family:'Playfair Display',serif;font-weight:400;line-height:1.08;margin-bottom:20px}
+.panel-h em{font-style:italic;color:var(--gold)}
+.panel-h.xl{font-size:clamp(52px,7vw,96px);letter-spacing:-2px}
+.panel-h.lg{font-size:clamp(36px,4vw,60px)}
+.panel-h.md{font-size:clamp(28px,3vw,46px)}
+.panel-sub{font-size:15px;font-weight:200;color:var(--muted);line-height:1.75;max-width:420px}
+.panel-sub.center{margin:0 auto}
+.panel-cta{margin-top:36px;display:flex;gap:18px;justify-content:inherit;align-items:center}
+.btn-g{background:var(--gold);color:var(--bg);padding:14px 38px;font-size:11px;letter-spacing:2.5px;text-transform:uppercase;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:500;transition:transform 0.3s,box-shadow 0.3s}
+.btn-g:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(212,168,83,0.45)}
+.btn-o{background:transparent;color:var(--white);padding:14px 38px;font-size:11px;letter-spacing:2.5px;text-transform:uppercase;border:1px solid rgba(240,237,232,0.25);cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:300;transition:border-color 0.3s,color 0.3s}
+.btn-o:hover{border-color:var(--gold);color:var(--gold)}
+
+/* STAT CHIPS that float in panel-3 */
+.stat-row{display:flex;gap:32px;justify-content:center;margin-top:40px}
+.stat-chip{text-align:center;padding:24px 32px;border:1px solid rgba(212,168,83,0.18);background:rgba(212,168,83,0.05);backdrop-filter:blur(10px)}
+.stat-big{font-family:'Playfair Display',serif;font-size:42px;font-weight:400;color:var(--gold);line-height:1}
+.stat-lbl{font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:var(--muted);margin-top:6px}
+
+/* AMENITY PILLS panel-2 */
+.amenity-list{display:flex;flex-direction:column;gap:14px;margin-top:32px;align-items:flex-end}
+.amenity{display:flex;align-items:center;gap:14px;font-size:13px;color:rgba(240,237,232,0.6);letter-spacing:1px}
+.amenity-dot{width:6px;height:6px;border-radius:50%;background:var(--gold);flex-shrink:0}
+
+/* FLOOR label panel-1 */
+.spec-list{display:flex;flex-direction:column;gap:18px;margin-top:32px}
+.spec-row{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid rgba(240,237,232,0.06);padding-bottom:14px;gap:24px}
+.spec-k{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
+.spec-v{font-family:'Playfair Display',serif;font-size:20px;color:var(--white)}
+
+/* SCROLL PROGRESS BAR */
+#progress{position:fixed;bottom:0;left:0;height:2px;background:linear-gradient(90deg,var(--gold),var(--gold2));width:0%;z-index:999;transition:width 0.05s}
+
+/* SCROLL ARROW hint */
+#scroll-hint{
+  position:fixed;bottom:40px;left:50%;transform:translateX(-50%);
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+  font-size:10px;letter-spacing:3px;text-transform:uppercase;color:rgba(240,237,232,0.3);
+  z-index:100;transition:opacity 0.5s;
+}
+#scroll-hint .sh-line{width:1px;height:50px;background:linear-gradient(to bottom,var(--gold),transparent);animation:shpulse 2s ease-in-out infinite}
+@keyframes shpulse{0%,100%{transform:scaleY(1);opacity:0.4}50%{transform:scaleY(1.15);opacity:1}}
+
+/* POST-SCROLL SECTIONS */
+#post-scroll{position:relative;z-index:2;background:var(--bg)}
+
+/* FLOOR PLANS */
+.floor-section{padding:120px 80px;background:var(--bg);border-top:1px solid rgba(212,168,83,0.08)}
+.fs-header{display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:end;margin-bottom:80px}
+.floor-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px}
+.floor-card{
+  position:relative;overflow:hidden;cursor:pointer;
+  background:rgba(255,255,255,0.02);border:1px solid rgba(212,168,83,0.08);
+  padding:40px 32px;transition:border-color 0.4s,background 0.4s;
+}
+.floor-card:hover{border-color:rgba(212,168,83,0.35);background:rgba(212,168,83,0.04)}
+.floor-num{font-family:'Playfair Display',serif;font-size:64px;font-weight:400;color:rgba(212,168,83,0.12);line-height:1;margin-bottom:16px}
+.floor-name{font-family:'Playfair Display',serif;font-size:24px;font-weight:400;margin-bottom:12px}
+.floor-detail{font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:24px}
+.floor-price{font-family:'Playfair Display',serif;font-size:28px;color:var(--gold)}
+.floor-arrow{position:absolute;bottom:32px;right:32px;width:36px;height:36px;border:1px solid rgba(212,168,83,0.25);display:flex;align-items:center;justify-content:center;color:var(--gold);font-size:16px;transition:background 0.3s,transform 0.4s}
+.floor-card:hover .floor-arrow{background:var(--gold);color:var(--bg);transform:rotate(45deg)}
+
+/* CTA BANNER */
+.cta-banner{
+  padding:140px 80px;
+  text-align:center;
+  background:linear-gradient(180deg,var(--bg) 0%,rgba(212,168,83,0.06) 50%,var(--bg) 100%);
+  border-top:1px solid rgba(212,168,83,0.08);
+  border-bottom:1px solid rgba(212,168,83,0.08);
+}
+.cta-banner h2{font-family:'Playfair Display',serif;font-size:clamp(40px,5vw,80px);font-weight:400;line-height:1.1;margin-bottom:28px}
+.cta-banner h2 em{font-style:italic;color:var(--gold)}
+.cta-banner p{font-size:16px;font-weight:200;color:var(--muted);max-width:500px;margin:0 auto 44px;line-height:1.8}
+.cta-row{display:flex;gap:20px;justify-content:center}
+
+/* FOOTER */
+footer{padding:60px 80px;border-top:1px solid rgba(240,237,232,0.06);display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:60px}
+.fl{font-family:'Playfair Display',serif;font-size:20px;color:var(--gold);display:block;margin-bottom:14px;letter-spacing:3px}
+.fd{font-size:13px;color:rgba(240,237,232,0.3);line-height:1.8;max-width:240px}
+.fh{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:18px}
+.fl-links{display:flex;flex-direction:column;gap:11px}
+.fl-links a{font-size:13px;color:rgba(240,237,232,0.38);text-decoration:none;transition:color 0.3s}
+.fl-links a:hover{color:var(--white)}
+.fb{padding:24px 80px;border-top:1px solid rgba(255,255,255,0.04);display:flex;justify-content:space-between;font-size:12px;color:rgba(240,237,232,0.2);letter-spacing:0.5px}
+
+/* LOADING SCREEN */
+#loader{
+  position:fixed;inset:0;background:var(--bg);z-index:9999;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;
+  transition:opacity 0.8s ease;
+}
+.loader-logo{font-family:'Playfair Display',serif;font-size:28px;letter-spacing:4px;color:var(--gold);text-transform:uppercase}
+.loader-bar-wrap{width:200px;height:1px;background:rgba(212,168,83,0.15)}
+.loader-bar{height:100%;background:var(--gold);width:0%;transition:width 0.05s linear}
+.loader-txt{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:rgba(212,168,83,0.5)}
+
+@media(max-width:900px){
+  nav{padding:18px 24px}
+  .nav-links{display:none}
+  .floor-section{padding:80px 24px}
+  .fs-header{grid-template-columns:1fr}
+  .floor-grid{grid-template-columns:1fr}
+  .cta-banner{padding:80px 24px}
+  footer{grid-template-columns:1fr 1fr;padding:40px 24px}
+  .stat-row{flex-direction:column;align-items:center}
+  #panel-1,#panel-2{left:5%;right:5%;text-align:left}
+  #panel-2{text-align:left}
+  .amenity-list{align-items:flex-start}
+}
+</style>
+</head>
+<body>
+
+<!-- LOADER -->
+<div id="loader">
+  <div class="loader-logo">Apex <span style="font-style:italic;color:#F0EDE8">Towers</span></div>
+  <div class="loader-bar-wrap"><div class="loader-bar" id="loaderBar"></div></div>
+  <div class="loader-txt" id="loaderTxt">Initializing 3D Experience...</div>
+</div>
+
+<!-- PROGRESS BAR -->
+<div id="progress"></div>
+
+<!-- SCROLL HINT -->
+<div id="scroll-hint">
+  <div class="sh-line"></div>
+  Scroll to Explore
+</div>
+
+<!-- NAV -->
+<nav id="navbar">
+  <div class="logo">Apex <span>Towers</span></div>
+  <ul class="nav-links">
+    <li><a href="#residences">Residences</a></li>
+    <li><a href="#amenities">Amenities</a></li>
+    <li><a href="#availability">Availability</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+  <button class="nav-btn">Register Interest</button>
+</nav>
+
+<!-- ═══ STICKY 3D SCROLL SCENE ═══ -->
+<div id="scroll-container">
+  <div id="sticky-scene">
+    <canvas id="building-canvas"></canvas>
+
+    <!-- Panel 0: HERO — appears at top -->
+    <div class="scroll-panel active" id="panel-0">
+      <div class="eyebrow">Chennai · 2026 · Iconic</div>
+      <h1 class="panel-h xl">Live Where<br><em>Sky Begins</em></h1>
+      <p class="panel-sub center">72 floors of architectural mastery. Where every residence is a statement and every view, a canvas.</p>
+      <div class="panel-cta" style="justify-content:center">
+        <button class="btn-g">Explore Residences</button>
+        <button class="btn-o">Watch Film</button>
+      </div>
+    </div>
+
+    <!-- Panel 1: ARCHITECTURE — left side -->
+    <div class="scroll-panel" id="panel-1">
+      <div class="eyebrow" style="justify-content:flex-start">Architecture</div>
+      <h2 class="panel-h lg">Designed<br>for <em>Eternity</em></h2>
+      <p class="panel-sub">Every curve, cantilever, and façade detail engineered with purpose. The result: a silhouette that defines a city's skyline for generations.</p>
+      <div class="spec-list">
+        <div class="spec-row"><span class="spec-k">Height</span><span class="spec-v">382 m</span></div>
+        <div class="spec-row"><span class="spec-k">Floors</span><span class="spec-v">72</span></div>
+        <div class="spec-row"><span class="spec-k">Architect</span><span class="spec-v">Zaha Hadid Architects</span></div>
+        <div class="spec-row"><span class="spec-k">Completion</span><span class="spec-v">Q4 2026</span></div>
+      </div>
+    </div>
+
+    <!-- Panel 2: AMENITIES — right side -->
+    <div class="scroll-panel" id="panel-2">
+      <div class="eyebrow" style="justify-content:flex-end">World-Class</div>
+      <h2 class="panel-h lg">Amenities<br><em>Redefined</em></h2>
+      <p class="panel-sub" style="margin-left:auto">Nothing has been overlooked. Every convenience, every luxury, every experience curated to perfection.</p>
+      <div class="amenity-list">
+        <div class="amenity"><span class="amenity-dot"></span>Infinity Sky Pool — Floor 68</div>
+        <div class="amenity"><span class="amenity-dot"></span>Private Cinema & Screening</div>
+        <div class="amenity"><span class="amenity-dot"></span>Michelin-Star Restaurant</div>
+        <div class="amenity"><span class="amenity-dot"></span>Helipad & Concierge</div>
+        <div class="amenity"><span class="amenity-dot"></span>AI-Powered Smart Home</div>
+        <div class="amenity"><span class="amenity-dot"></span>Four-Level Wellness Spa</div>
+        <div class="amenity"><span class="amenity-dot"></span>Private Wine Vault</div>
+      </div>
+    </div>
+
+    <!-- Panel 3: NUMBERS — centered -->
+    <div class="scroll-panel" id="panel-3">
+      <div class="eyebrow">By The Numbers</div>
+      <h2 class="panel-h md">A Tower of<br><em>Superlatives</em></h2>
+      <div class="stat-row">
+        <div class="stat-chip"><div class="stat-big">72</div><div class="stat-lbl">Floors</div></div>
+        <div class="stat-chip"><div class="stat-big">320</div><div class="stat-lbl">Residences</div></div>
+        <div class="stat-chip"><div class="stat-big">382m</div><div class="stat-lbl">Height</div></div>
+        <div class="stat-chip"><div class="stat-big">18</div><div class="stat-lbl">Amenity Floors</div></div>
+      </div>
+    </div>
+
+    <!-- Panel 4: FINAL CTA inside scene -->
+    <div class="scroll-panel" id="panel-4">
+      <div class="eyebrow">Exclusive Ownership</div>
+      <h2 class="panel-h lg">Residences from<br><em>₹18 Crore</em></h2>
+      <p class="panel-sub center">A limited collection of 320 residences. Scroll to explore floor plans and register your interest today.</p>
+      <div class="panel-cta" style="justify-content:center">
+        <button class="btn-g">View Floor Plans ↓</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+<!-- ═══ END STICKY SCENE ═══ -->
+
+
+<!-- POST-SCROLL CONTENT -->
+<div id="post-scroll">
+
+  <!-- FLOOR PLANS / RESIDENCES -->
+  <section class="floor-section" id="residences">
+    <div class="fs-header">
+      <div>
+        <div style="font-size:10px;letter-spacing:4px;text-transform:uppercase;color:var(--gold);margin-bottom:16px">Residences</div>
+        <h2 style="font-family:'Playfair Display',serif;font-size:clamp(36px,4vw,60px);font-weight:400;line-height:1.1">Choose Your<br><em style="color:var(--gold)">Sky Address</em></h2>
+      </div>
+      <p style="font-size:15px;font-weight:200;color:var(--muted);line-height:1.8">Six distinct residence typologies — each commanding breathtaking panoramas across the bay, the city, and beyond.</p>
+    </div>
+    <div class="floor-grid" id="availability">
+      <div class="floor-card">
+        <div class="floor-num">01</div>
+        <div class="floor-name">Sky Studio</div>
+        <div class="floor-detail">Floors 10–20 · 680–900 sq ft<br>Panoramic city views, bespoke finishes.</div>
+        <div class="floor-price">From ₹18 Cr</div>
+        <div class="floor-arrow">→</div>
+      </div>
+      <div class="floor-card">
+        <div class="floor-num">02</div>
+        <div class="floor-name">Sky Residence</div>
+        <div class="floor-detail">Floors 21–38 · 1,400–1,900 sq ft<br>2 & 3 bedroom layouts with study alcove.</div>
+        <div class="floor-price">From ₹34 Cr</div>
+        <div class="floor-arrow">→</div>
+      </div>
+      <div class="floor-card">
+        <div class="floor-num">03</div>
+        <div class="floor-name">Grand Residence</div>
+        <div class="floor-detail">Floors 39–52 · 2,800–3,600 sq ft<br>Full-floor living with butler's wing.</div>
+        <div class="floor-price">From ₹62 Cr</div>
+        <div class="floor-arrow">→</div>
+      </div>
+      <div class="floor-card">
+        <div class="floor-num">04</div>
+        <div class="floor-name">Sky Villa</div>
+        <div class="floor-detail">Floors 53–62 · 4,200–5,000 sq ft<br>Private garden terrace & plunge pool.</div>
+        <div class="floor-price">From ₹95 Cr</div>
+        <div class="floor-arrow">→</div>
+      </div>
+      <div class="floor-card">
+        <div class="floor-num">05</div>
+        <div class="floor-name">Observatory Suite</div>
+        <div class="floor-detail">Floors 63–70 · 6,000–7,200 sq ft<br>360° wraparound views, custom design.</div>
+        <div class="floor-price">From ₹1.4 Cr+</div>
+        <div class="floor-arrow">→</div>
+      </div>
+      <div class="floor-card" style="border-color:rgba(212,168,83,0.3);background:rgba(212,168,83,0.04)">
+        <div class="floor-num" style="color:rgba(212,168,83,0.3)">06</div>
+        <div class="floor-name">The Crown Penthouse</div>
+        <div class="floor-detail">Floors 71–72 · Full Duplex · 12,000 sq ft<br>A singular address. One of one.</div>
+        <div class="floor-price" style="color:var(--gold2)">Price on Application</div>
+        <div class="floor-arrow" style="border-color:rgba(212,168,83,0.5);color:var(--gold)">→</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA BANNER -->
+  <section class="cta-banner" id="contact">
+    <h2>Your Sky Awaits.<br><em>Register Today.</em></h2>
+    <p>Join the exclusive priority list. Be first to receive floor plan releases, preview pricing, and private viewing invitations.</p>
+    <div class="cta-row">
+      <button class="btn-g">Register Interest</button>
+      <button class="btn-o">Download Brochure</button>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div>
+      <span class="fl">Apex <span style="font-style:italic;color:#F0EDE8">Towers</span></span>
+      <p class="fd">Redefining luxury high-rise living in Chennai. A landmark that transcends architecture — it becomes heritage.</p>
+    </div>
+    <div>
+      <div class="fh">Residences</div>
+      <div class="fl-links">
+        <a href="#">Sky Studio</a><a href="#">Sky Residence</a><a href="#">Grand Residence</a>
+        <a href="#">Sky Villa</a><a href="#">Observatory Suite</a><a href="#">Crown Penthouse</a>
+      </div>
+    </div>
+    <div>
+      <div class="fh">Amenities</div>
+      <div class="fl-links">
+        <a href="#">Sky Pool</a><a href="#">Wellness Spa</a><a href="#">Private Cinema</a>
+        <a href="#">Fine Dining</a><a href="#">Concierge</a><a href="#">Smart Home</a>
+      </div>
+    </div>
+    <div>
+      <div class="fh">Contact</div>
+      <div class="fl-links">
+        <a href="#">Sales Gallery</a><a href="#">Virtual Tour</a><a href="#">Media</a>
+        <a href="#">Careers</a><a href="#">Legal</a>
+      </div>
+    </div>
+  </footer>
+  <div class="fb"><span>© 2025 Apex Towers. All rights reserved.</span><span>Privacy · Terms · Cookies</span></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ══════════════════════════════════════
+//  LOADER
+// ══════════════════════════════════════
+const loader = document.getElementById('loader');
+const loaderBar = document.getElementById('loaderBar');
+const loaderTxt = document.getElementById('loaderTxt');
+const messages = ['Initializing 3D Experience...','Loading Architecture...','Placing the Tower...','Almost Ready...'];
+let prog = 0;
+const loadInterval = setInterval(() => {
+  prog += Math.random() * 4 + 1;
+  loaderBar.style.width = Math.min(prog, 100) + '%';
+  loaderTxt.textContent = messages[Math.min(Math.floor(prog/26), messages.length-1)];
+  if (prog >= 100) {
+    clearInterval(loadInterval);
+    setTimeout(() => { loader.style.opacity = '0'; setTimeout(() => { loader.style.display = 'none'; }, 800); }, 400);
+  }
+}, 40);
+
+// ══════════════════════════════════════
+//  THREE.JS BUILDING SCENE
+// ══════════════════════════════════════
+const canvas = document.getElementById('building-canvas');
+const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.1;
+
+const W = () => canvas.parentElement.offsetWidth;
+const H = () => canvas.parentElement.offsetHeight;
+renderer.setSize(W(), H());
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x080A0F, 0.012);
+
+const camera = new THREE.PerspectiveCamera(35, W()/H(), 0.1, 2000);
+camera.position.set(0, 8, 45);
+camera.lookAt(0, 12, 0);
+
+// ── LIGHTS ──
+const ambient = new THREE.AmbientLight(0x334466, 0.6);
+scene.add(ambient);
+
+const sunLight = new THREE.DirectionalLight(0xFFE4A0, 2.5);
+sunLight.position.set(30, 60, 20);
+sunLight.castShadow = true;
+sunLight.shadow.mapSize.width = 2048;
+sunLight.shadow.mapSize.height = 2048;
+sunLight.shadow.camera.near = 1;
+sunLight.shadow.camera.far = 200;
+sunLight.shadow.camera.left = -60;
+sunLight.shadow.camera.right = 60;
+sunLight.shadow.camera.top = 80;
+sunLight.shadow.camera.bottom = -10;
+scene.add(sunLight);
+
+const fillLight = new THREE.DirectionalLight(0x4466BB, 0.8);
+fillLight.position.set(-20, 10, -15);
+scene.add(fillLight);
+
+const groundLight = new THREE.PointLight(0xD4A853, 0.6, 40);
+groundLight.position.set(0, 0, 0);
+scene.add(groundLight);
+
+// ── MATERIALS ──
+const glassMat = new THREE.MeshPhysicalMaterial({
+  color: 0x8AB4D0,
+  metalness: 0.1,
+  roughness: 0.05,
+  transmission: 0.7,
+  transparent: true,
+  opacity: 0.75,
+  reflectivity: 0.9,
+  envMapIntensity: 1.2,
+  side: THREE.DoubleSide
+});
+const frameMat = new THREE.MeshStandardMaterial({ color: 0xC0A870, metalness: 0.85, roughness: 0.2 });
+const darkFrame = new THREE.MeshStandardMaterial({ color: 0x1A1A28, metalness: 0.6, roughness: 0.3 });
+const concreteMat = new THREE.MeshStandardMaterial({ color: 0x2A2830, metalness: 0.05, roughness: 0.9 });
+const glowMat = new THREE.MeshBasicMaterial({ color: 0xD4A853, transparent: true, opacity: 0.85 });
+const windowEmit = new THREE.MeshStandardMaterial({ color: 0x4466AA, emissive: 0x2233AA, emissiveIntensity: 0.6, metalness: 0.1, roughness: 0.1 });
+
+// ══════════════════════════════════════
+//  BUILD THE TOWER
+// ══════════════════════════════════════
+const tower = new THREE.Group();
+
+function makeFloorGroup(y, width, depth, height, hasFacade=true, lit=false) {
+  const g = new THREE.Group();
+
+  // Core slab
+  const slab = new THREE.Mesh(new THREE.BoxGeometry(width, height, depth), concreteMat);
+  slab.position.y = height/2;
+  slab.castShadow = true;
+  slab.receiveShadow = true;
+  g.add(slab);
+
+  if (hasFacade) {
+    // Glass curtain wall (front + back)
+    const glassF = new THREE.Mesh(new THREE.BoxGeometry(width-0.1, height-0.05, 0.06), lit ? windowEmit : glassMat);
+    glassF.position.set(0, height/2, depth/2);
+    g.add(glassF);
+    const glassB = glassF.clone();
+    glassB.position.z = -depth/2;
+    g.add(glassB);
+    // Sides
+    const glassL = new THREE.Mesh(new THREE.BoxGeometry(0.06, height-0.05, depth-0.1), lit ? windowEmit : glassMat);
+    glassL.position.set(-width/2, height/2, 0);
+    g.add(glassL);
+    const glassR = glassL.clone();
+    glassR.position.x = width/2;
+    g.add(glassR);
+
+    // Gold frame lines (horizontal)
+    const frameGeo = new THREE.BoxGeometry(width, 0.04, 0.08);
+    const frameTop = new THREE.Mesh(frameGeo, frameMat);
+    frameTop.position.set(0, height, depth/2);
+    g.add(frameTop);
+  }
+
+  g.position.y = y;
+  return g;
+}
+
+// Ground plaza
+const plazaGeo = new THREE.BoxGeometry(24, 0.4, 20);
+const plaza = new THREE.Mesh(plazaGeo, new THREE.MeshStandardMaterial({ color: 0x1A1820, metalness: 0.2, roughness: 0.7 }));
+plaza.position.y = -0.2;
+plaza.receiveShadow = true;
+tower.add(plaza);
+
+// Podium (floors 1-4)
+const podium = new THREE.Mesh(new THREE.BoxGeometry(14, 5, 11), concreteMat);
+podium.position.y = 2.5;
+podium.castShadow = true;
+tower.add(podium);
+// Podium glass
+const podGlass = new THREE.Mesh(new THREE.BoxGeometry(14, 4.8, 0.1), glassMat);
+podGlass.position.set(0, 2.5, 5.5);
+tower.add(podGlass);
+const podGlassB = podGlass.clone(); podGlassB.position.z = -5.5; tower.add(podGlassB);
+// Podium frame accents
+for (let i=0; i<3; i++) {
+  const vf = new THREE.Mesh(new THREE.BoxGeometry(0.08, 5, 0.08), frameMat);
+  vf.position.set(-5 + i*5, 2.5, 5.5);
+  tower.add(vf);
+}
+
+// Main shaft — tapering floors
+const floorData = [
+  // [yStart, width, depth, height]
+  [5,  10.5, 8.5, 2.2], // floors 5-8
+  [9,  10.0, 8.2, 2.0],
+  [13, 9.5,  8.0, 2.0],
+  [17, 9.2,  7.8, 2.0],
+  [21, 8.8,  7.5, 1.9],
+  [25, 8.5,  7.2, 1.9],
+  [29, 8.2,  7.0, 1.9],
+  [33, 7.9,  6.8, 1.8],
+  [37, 7.6,  6.5, 1.8],
+  [41, 7.3,  6.3, 1.8],
+  [45, 7.0,  6.0, 1.7],
+  [49, 6.7,  5.8, 1.7],
+  [53, 6.4,  5.5, 1.7],
+  [57, 6.0,  5.2, 1.6],
+  [61, 5.5,  4.8, 1.6],
+  [65, 4.8,  4.2, 1.6],
+];
+
+floorData.forEach(([y, w, d, h], i) => {
+  const lit = Math.random() > 0.35; // random lit floors
+  tower.add(makeFloorGroup(y, w, d, h, true, lit));
+  // Horizontal band every few floors
+  if (i % 4 === 0) {
+    const band = new THREE.Mesh(new THREE.BoxGeometry(w+0.3, 0.12, d+0.3), frameMat);
+    band.position.set(0, y + h + 0.06, 0);
+    tower.add(band);
+  }
+});
+
+// Setback floors (near top, dramatically stepped)
+const setbacks = [
+  [68, 4.0, 3.5, 1.6],
+  [70, 3.2, 2.8, 1.5],
+  [72, 2.4, 2.0, 1.4],
+];
+setbacks.forEach(([y, w, d, h]) => {
+  const fg = makeFloorGroup(y, w, d, h, true, true);
+  // Gold band at each setback
+  const band = new THREE.Mesh(new THREE.BoxGeometry(w+0.4, 0.18, d+0.4), frameMat);
+  band.position.y = h + 0.09;
+  fg.add(band);
+  tower.add(fg);
+});
+
+// Mechanical top / crown
+const crownBase = new THREE.Mesh(new THREE.BoxGeometry(2.8, 1.2, 2.4), darkFrame);
+crownBase.position.set(0, 74.4, 0);
+tower.add(crownBase);
+
+// Spire
+const spireGeo = new THREE.CylinderGeometry(0, 0.18, 8, 8);
+const spire = new THREE.Mesh(spireGeo, frameMat);
+spire.position.set(0, 79.5, 0);
+tower.add(spire);
+
+// Spire glow tip
+const tipGeo = new THREE.SphereGeometry(0.22, 8, 8);
+const tip = new THREE.Mesh(tipGeo, glowMat);
+tip.position.set(0, 83.6, 0);
+tower.add(tip);
+
+// Gold crown ring
+const crownRing = new THREE.Mesh(new THREE.TorusGeometry(1.6, 0.06, 8, 32), frameMat);
+crownRing.position.set(0, 74, 0);
+crownRing.rotation.x = Math.PI/2;
+tower.add(crownRing);
+
+// ── SECONDARY BUILDING (shorter, background) ──
+const bldg2 = new THREE.Group();
+for (let i=0; i<12; i++) {
+  const fl = makeFloorGroup(i*2.2, 6.5, 5.5, 2.1, true, Math.random()>0.5);
+  bldg2.add(fl);
+}
+bldg2.position.set(-18, 0, -8);
+bldg2.scale.setScalar(0.75);
+scene.add(bldg2);
+
+const bldg3 = bldg2.clone();
+bldg3.position.set(16, 0, -12);
+bldg3.scale.setScalar(0.6);
+scene.add(bldg3);
+
+scene.add(tower);
+
+// ── GROUND / REFLECTIVE PLANE ──
+const groundGeo = new THREE.PlaneGeometry(300, 300);
+const groundMat = new THREE.MeshStandardMaterial({ color: 0x0C0E14, roughness: 0.95, metalness: 0.05 });
+const ground = new THREE.Mesh(groundGeo, groundMat);
+ground.rotation.x = -Math.PI/2;
+ground.position.y = -0.42;
+ground.receiveShadow = true;
+scene.add(ground);
+
+// Grid lines on ground
+const grid = new THREE.GridHelper(200, 60, 0xD4A853, 0x1A1822);
+grid.position.y = -0.38;
+grid.material.opacity = 0.12; grid.material.transparent = true;
+scene.add(grid);
+
+// ── CITY BACKDROP BUILDINGS ──
+for (let i = 0; i < 25; i++) {
+  const h = Math.random() * 15 + 3;
+  const bx = (Math.random()-0.5) * 140;
+  const bz = -(Math.random() * 60 + 20);
+  const bw = Math.random() * 3 + 1.5;
+  const bd = Math.random() * 3 + 1.5;
+  const bg = new THREE.Mesh(
+    new THREE.BoxGeometry(bw, h, bd),
+    new THREE.MeshStandardMaterial({ color: 0x101520, roughness: 0.9, metalness: 0.1 })
+  );
+  bg.position.set(bx, h/2, bz);
+  scene.add(bg);
+  // Random lit windows
+  for (let w=0; w<Math.floor(Math.random()*6+2); w++) {
+    const wl = new THREE.Mesh(
+      new THREE.BoxGeometry(0.25, 0.2, 0.05),
+      new THREE.MeshBasicMaterial({ color: 0xFFD880, transparent: true, opacity: Math.random()*0.6+0.3 })
+    );
+    wl.position.set(
+      bx + (Math.random()-0.5)*(bw-0.4),
+      Math.random()*h,
+      bz + bd/2 + 0.03
+    );
+    scene.add(wl);
+  }
+}
+
+// ── PARTICLES (stars/dust) ──
+const partCount = 400;
+const partGeo = new THREE.BufferGeometry();
+const positions = new Float32Array(partCount * 3);
+for (let i=0; i<partCount; i++) {
+  positions[i*3]   = (Math.random()-0.5)*300;
+  positions[i*3+1] = Math.random()*150;
+  positions[i*3+2] = (Math.random()-0.5)*200 - 20;
+}
+partGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+const partMat = new THREE.PointsMaterial({ color: 0xD4A853, size: 0.18, transparent: true, opacity: 0.5 });
+const stars = new THREE.Points(partGeo, partMat);
+scene.add(stars);
+
+// ── SUN GLOW DISC ──
+const sunDisc = new THREE.Mesh(
+  new THREE.CircleGeometry(6, 32),
+  new THREE.MeshBasicMaterial({ color: 0xFFCC55, transparent: true, opacity: 0.12, side: THREE.DoubleSide })
+);
+sunDisc.position.set(40, 70, -80);
+scene.add(sunDisc);
+
+// ══════════════════════════════════════
+//  SCROLL-DRIVEN CAMERA + PANELS
+// ══════════════════════════════════════
+const panels = [
+  document.getElementById('panel-0'),
+  document.getElementById('panel-1'),
+  document.getElementById('panel-2'),
+  document.getElementById('panel-3'),
+  document.getElementById('panel-4'),
+];
+
+// Camera keyframes: [scrollFraction, camX, camY, camZ, lookX, lookY, lookZ, towerRotY]
+const keyframes = [
+  { s: 0.00, cx:0, cy:8,  cz:45, lx:0, ly:12, lz:0, ry:0,    panel:0 },  // Hero — front
+  { s: 0.16, cx:20,cy:18, cz:35, lx:0, ly:25, lz:0, ry:-0.15, panel:1 }, // Architecture — side
+  { s: 0.32, cx:-22,cy:22,cz:28, lx:0, ly:30, lz:0, ry:0.2,  panel:2 },  // Amenities — other side
+  { s: 0.50, cx:0, cy:40, cz:55, lx:0, ly:40, lz:0, ry:0.05, panel:3 },  // Numbers — aerial
+  { s: 0.70, cx:5, cy:75, cz:20, lx:0, ly:78, lz:0, ry:-0.1, panel:4 },  // Crown closeup
+  { s: 0.85, cx:0, cy:85, cz:10, lx:0, ly:84, lz:0, ry:0,    panel:-1 }, // Spire extreme closeup
+  { s: 1.00, cx:0, cy:10, cz:55, lx:0, ly:20, lz:0, ry:0.3,  panel:-1 }, // Pull back
+];
+
+function lerp(a, b, t) { return a + (b - a) * t; }
+function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+function smoothstep(t) { return t * t * (3 - 2 * t); }
+
+function interp(kfs, s) {
+  let lo = kfs[0], hi = kfs[kfs.length-1];
+  for (let i=0; i<kfs.length-1; i++) {
+    if (s >= kfs[i].s && s <= kfs[i+1].s) { lo = kfs[i]; hi = kfs[i+1]; break; }
+  }
+  const range = hi.s - lo.s;
+  const t = range === 0 ? 0 : smoothstep(clamp((s - lo.s) / range, 0, 1));
+  return {
+    cx: lerp(lo.cx, hi.cx, t), cy: lerp(lo.cy, hi.cy, t), cz: lerp(lo.cz, hi.cz, t),
+    lx: lerp(lo.lx, hi.lx, t), ly: lerp(lo.ly, hi.ly, t), lz: lerp(lo.lz, hi.lz, t),
+    ry: lerp(lo.ry, hi.ry, t),
+    panel: t < 0.5 ? lo.panel : hi.panel
+  };
+}
+
+// PANEL ZONE MAP — which panel shows at which scroll fraction
+const panelZones = [
+  { from: 0.00, to: 0.13, idx: 0 },
+  { from: 0.13, to: 0.28, idx: 1 },
+  { from: 0.28, to: 0.44, idx: 2 },
+  { from: 0.44, to: 0.62, idx: 3 },
+  { from: 0.62, to: 0.80, idx: 4 },
+];
+
+function getActivePanel(s) {
+  for (const z of panelZones) { if (s >= z.from && s < z.to) return z.idx; }
+  return -1;
+}
+
+const scrollHint = document.getElementById('scroll-hint');
+const progressBar = document.getElementById('progress');
+const navbar = document.getElementById('navbar');
+
+let scrollFrac = 0;
+let animScrollFrac = 0;
+let animCamX = 0, animCamY = 8, animCamZ = 45;
+let animLookX = 0, animLookY = 12, animLookZ = 0;
+let animRotY = 0;
+let time = 0;
+
+function onScroll() {
+  const container = document.getElementById('scroll-container');
+  const rect = container.getBoundingClientRect();
+  const totalScroll = container.offsetHeight - window.innerHeight;
+  const scrolled = Math.max(0, -rect.top);
+  scrollFrac = clamp(scrolled / totalScroll, 0, 1);
+  progressBar.style.width = (scrollFrac * 100) + '%';
+  scrollHint.style.opacity = scrollFrac > 0.03 ? '0' : '1';
+  navbar.classList.toggle('scrolled', window.scrollY > 60);
+}
+window.addEventListener('scroll', onScroll, { passive: true });
+onScroll();
+
+// ══════════════════════════════════════
+//  RENDER LOOP
+// ══════════════════════════════════════
+const clock = new THREE.Clock();
+const camTarget = new THREE.Vector3();
+const lookTarget = new THREE.Vector3();
+
+function render() {
+  requestAnimationFrame(render);
+  time = clock.getElapsedTime();
+
+  // Smooth scroll fraction
+  animScrollFrac += (scrollFrac - animScrollFrac) * 0.06;
+
+  const state = interp(keyframes, animScrollFrac);
+
+  // Smooth camera
+  animCamX += (state.cx - animCamX) * 0.05;
+  animCamY += (state.cy - animCamY) * 0.05;
+  animCamZ += (state.cz - animCamZ) * 0.05;
+  animLookX += (state.lx - animLookX) * 0.05;
+  animLookY += (state.ly - animLookY) * 0.05;
+  animLookZ += (state.lz - animLookZ) * 0.05;
+  animRotY  += (state.ry - animRotY)  * 0.05;
+
+  // Slight breathing float
+  camera.position.set(
+    animCamX + Math.sin(time * 0.15) * 0.3,
+    animCamY + Math.sin(time * 0.2) * 0.15,
+    animCamZ
+  );
+  camTarget.set(animLookX, animLookY, animLookZ);
+  camera.lookAt(camTarget);
+
+  // Tower slow rotation + scroll-driven rotation
+  tower.rotation.y = animRotY + Math.sin(time * 0.07) * 0.04;
+  bldg2.rotation.y = time * 0.005;
+
+  // Pulsing spire tip
+  tip.material.opacity = 0.6 + Math.sin(time * 3) * 0.35;
+  tip.scale.setScalar(1 + Math.sin(time * 3) * 0.2);
+
+  // Stars slow rotation
+  stars.rotation.y = time * 0.005;
+
+  // Sun disc slow pulse
+  sunDisc.material.opacity = 0.08 + Math.sin(time * 0.3) * 0.04;
+
+  // Ground light pulse
+  groundLight.intensity = 0.4 + Math.sin(time * 1.2) * 0.15;
+
+  // Panel management
+  const activeIdx = getActivePanel(animScrollFrac);
+  panels.forEach((p, i) => { p.classList.toggle('active', i === activeIdx); });
+
+  renderer.render(scene, camera);
+}
+
+window.addEventListener('resize', () => {
+  camera.aspect = W() / H();
+  camera.updateProjectionMatrix();
+  renderer.setSize(W(), H());
+});
+
+render();
+</script>
+</body>
+</html>

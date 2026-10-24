@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Rolex Submariner — Born to Dive</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Montserrat:wght@100;200;300;400;500&display=swap" rel="stylesheet"/>
+
+  <!-- Three.js r128 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <!-- GSAP + ScrollTrigger -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+
+  <style>
+    /* ═══════════════════════════════════════════════
+       DESIGN TOKENS
+    ═══════════════════════════════════════════════ */
+    :root {
+      --rolex-green:  #006039;
+      --rolex-gold:   #a27c1a;
+      --rolex-gold-lt:#d4a843;
+      --rolex-silver: #b0b8c1;
+      --bg:           #020303;
+      --bg2:          #060a07;
+      --text:         #c8cfc8;
+      --muted:        #556055;
+      --serif:        'Playfair Display', Georgia, serif;
+      --sans:         'Montserrat', sans-serif;
+    }
+
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-weight: 200;
+      letter-spacing: .06em;
+      overflow-x: hidden;
+      cursor: none;
+    }
+
+    /* ── CURSOR ───────────────────────────────────── */
+    #cur  { position:fixed; width:6px; height:6px; background:var(--rolex-gold-lt); border-radius:50%; pointer-events:none; z-index:9999; transform:translate(-50%,-50%); transition:width .3s,height .3s; mix-blend-mode:screen; }
+    #curR { position:fixed; width:32px; height:32px; border:1px solid rgba(164,124,26,.45); border-radius:50%; pointer-events:none; z-index:9998; transform:translate(-50%,-50%); transition:transform .2s ease-out,width .3s,height .3s,border-color .3s; }
+
+    /* ── NAV ──────────────────────────────────────── */
+    nav {
+      position:fixed; top:0; left:0; right:0; z-index:200;
+      display:flex; align-items:center; justify-content:space-between;
+      padding:1.8rem 5rem;
+      opacity:0;
+      background:linear-gradient(180deg,rgba(2,3,3,.92) 0%,transparent 100%);
+    }
+
+    /* Rolex Crown SVG logo */
+    .brand { display:flex; align-items:center; gap:.9rem; text-decoration:none; }
+    .brand-crown { width:28px; height:28px; fill:var(--rolex-gold-lt); }
+    .brand-name  { font-family:var(--serif); font-size:1.15rem; letter-spacing:.3em; color:#fff; font-weight:400; }
+    .brand-sub   { font-size:.5rem; letter-spacing:.4em; text-transform:uppercase; color:var(--rolex-gold-lt); display:block; margin-top:.1rem; }
+
+    .nav-links { display:flex; gap:2.5rem; list-style:none; }
+    .nav-links a { font-size:.58rem; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); text-decoration:none; transition:color .3s; }
+    .nav-links a:hover { color:var(--rolex-gold-lt); }
+
+    .nav-btn { font-size:.55rem; letter-spacing:.2em; text-transform:uppercase; color:var(--rolex-gold-lt); border:1px solid rgba(164,124,26,.5); padding:.55rem 1.4rem; text-decoration:none; transition:all .3s; }
+    .nav-btn:hover { background:var(--rolex-gold-lt); color:#000; }
+
+    /* ── HERO ─────────────────────────────────────── */
+    #hero {
+      position:relative; height:100vh;
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      overflow:hidden;
+    }
+
+    #c3d {
+      position:absolute; inset:0;
+      width:100% !important; height:100% !important;
+      z-index:1;
+    }
+
+    /* radial glow behind watch */
+    .halo {
+      position:absolute; width:600px; height:600px; border-radius:50%;
+      background:radial-gradient(circle, rgba(0,96,57,.18) 0%, transparent 70%);
+      pointer-events:none; z-index:0;
+      animation:breathe 5s ease-in-out infinite alternate;
+    }
+    @keyframes breathe { from{transform:scale(.85);opacity:.6} to{transform:scale(1.15);opacity:1} }
+
+    /* hero text layers */
+    .hero-tag  { position:relative; z-index:10; font-size:.56rem; letter-spacing:.45em; text-transform:uppercase; color:var(--rolex-green); margin-bottom:1.4rem; opacity:0; }
+    .hero-h1   { position:relative; z-index:10; font-family:var(--serif); font-size:clamp(3.5rem,9vw,8.5rem); font-weight:700; line-height:.9; text-align:center; color:#fff; opacity:0; }
+    .hero-h1 em{ font-style:italic; color:var(--rolex-gold-lt); }
+    .hero-ref  { position:relative; z-index:10; margin-top:1.8rem; font-size:.62rem; letter-spacing:.3em; text-transform:uppercase; color:var(--muted); opacity:0; }
+
+    /* scroll indicator */
+    .scroll-hint {
+      position:absolute; bottom:2.5rem; left:50%; transform:translateX(-50%);
+      z-index:10; text-align:center; font-size:.52rem; letter-spacing:.35em;
+      text-transform:uppercase; color:var(--muted);
+      animation:fadeHint 3s 2.8s ease forwards; opacity:0;
+    }
+    .scroll-hint::after {
+      content:''; display:block; width:1px; height:44px; margin:.8rem auto 0;
+      background:linear-gradient(to bottom, var(--rolex-green), transparent);
+      transform:scaleY(0); transform-origin:top;
+      animation:growLine 2.5s 3.2s ease forwards;
+    }
+    @keyframes fadeHint { to{opacity:.5} }
+    @keyframes growLine  { to{transform:scaleY(1)} }
+
+    /* ── PARTICLE CANVAS ──────────────────────────── */
+    #pCanvas { position:fixed; inset:0; width:100%; height:100%; pointer-events:none; z-index:0; opacity:.4; }
+
+    /* ── SECTIONS ─────────────────────────────────── */
+    section { position:relative; z-index:5; padding:9rem 5rem; }
+    .inner  { max-width:1120px; margin:0 auto; }
+
+    .eyebrow { font-size:.54rem; letter-spacing:.38em; text-transform:uppercase; color:var(--rolex-green); margin-bottom:1.2rem; }
+    .sec-h2  { font-family:var(--serif); font-size:clamp(2.4rem,4.5vw,4.5rem); font-weight:700; line-height:1.05; color:#fff; }
+    .sec-h2 em { font-style:italic; color:var(--rolex-gold-lt); }
+    .sec-p   { font-size:.75rem; line-height:2.1; color:var(--muted); max-width:520px; margin-top:1.6rem; }
+    .divider { width:52px; height:1px; background:linear-gradient(to right,transparent,var(--rolex-green),transparent); margin:1.6rem 0; }
+
+    /* ── HERITAGE SECTION ────────────────────────── */
+    #heritage { background:linear-gradient(180deg,var(--bg) 0%,var(--bg2) 100%); }
+    #heritage .inner { display:grid; grid-template-columns:1fr 1fr; gap:7rem; align-items:center; }
+
+    /* Decorative movement dial on right side */
+    .movement-art { position:relative; width:100%; aspect-ratio:1; display:flex; align-items:center; justify-content:center; }
+    .movement-art svg { width:90%; height:90%; animation:slowSpin 60s linear infinite; }
+    .movement-glow {
+      position:absolute; inset:0; border-radius:50%;
+      background:radial-gradient(circle, rgba(0,96,57,.15) 0%, transparent 65%);
+    }
+
+    /* ── SPECS ────────────────────────────────────── */
+    #specs { background:var(--bg2); }
+    .specs-row { display:grid; grid-template-columns:repeat(4,1fr); gap:0; margin-top:5rem; border-top:1px solid rgba(0,96,57,.3); border-left:1px solid rgba(0,96,57,.3); }
+    .spec { padding:2.5rem 2rem; border-right:1px solid rgba(0,96,57,.3); border-bottom:1px solid rgba(0,96,57,.3); }
+    .spec-n { font-family:var(--serif); font-size:2.8rem; font-weight:400; color:var(--rolex-gold-lt); line-height:1; }
+    .spec-u { font-size:.55rem; color:var(--muted); letter-spacing:.1em; }
+    .spec-l { font-size:.55rem; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); margin-top:.7rem; }
+
+    /* ── FEATURES (3 up) ──────────────────────────── */
+    #features { background:var(--bg); }
+    .feat-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:3px; margin-top:5rem; }
+    .feat-card {
+      background:var(--bg2); padding:3.5rem 2.5rem;
+      border:1px solid rgba(0,96,57,.12);
+      transition:border-color .4s, background .4s;
+      position:relative; overflow:hidden;
+    }
+    .feat-card::before {
+      content:''; position:absolute; inset:0;
+      background:linear-gradient(135deg, rgba(0,96,57,.06) 0%, transparent 50%);
+      opacity:0; transition:opacity .4s;
+    }
+    .feat-card:hover { border-color:rgba(0,96,57,.5); background:#070d09; }
+    .feat-card:hover::before { opacity:1; }
+    .feat-icon { margin-bottom:2rem; }
+    .feat-icon svg { width:40px; height:40px; stroke:var(--rolex-green); fill:none; stroke-width:1; }
+    .feat-title { font-family:var(--serif); font-size:1.5rem; font-weight:400; color:#fff; margin-bottom:.8rem; }
+    .feat-desc  { font-size:.72rem; line-height:2; color:var(--muted); }
+
+    /* ── DIAL CLOSEUP (full-width dark band) ─────── */
+    #dial-section {
+      background:var(--bg2);
+      padding:8rem 5rem;
+      text-align:center;
+      border-top:1px solid rgba(0,96,57,.15);
+      border-bottom:1px solid rgba(0,96,57,.15);
+    }
+    .dial-canvas-wrap {
+      width:320px; height:320px; margin:4rem auto;
+      position:relative;
+    }
+    #dialCanvas { width:100%; height:100%; border-radius:50%; }
+    .dial-ring {
+      position:absolute; inset:-12px; border-radius:50%;
+      border:1px solid rgba(0,96,57,.4);
+      animation:dialPulse 3s ease-in-out infinite alternate;
+    }
+    @keyframes dialPulse { from{box-shadow:0 0 30px rgba(0,96,57,.15)} to{box-shadow:0 0 60px rgba(0,96,57,.35)} }
+
+    /* ── QUOTE ────────────────────────────────────── */
+    #quote { background:var(--bg); text-align:center; }
+    .quote-mark { font-family:var(--serif); font-size:9rem; line-height:.4; color:rgba(0,96,57,.15); display:block; margin-bottom:2rem; }
+    .quote-body { font-family:var(--serif); font-size:clamp(1.4rem,2.5vw,2.2rem); font-style:italic; font-weight:400; color:#fff; max-width:780px; margin:0 auto; line-height:1.55; }
+    .quote-attr { font-size:.55rem; letter-spacing:.35em; text-transform:uppercase; color:var(--rolex-green); margin-top:2.5rem; }
+
+    /* ── FOOTER ───────────────────────────────────── */
+    footer {
+      background:var(--bg2); border-top:1px solid rgba(0,96,57,.2);
+      padding:3.5rem 5rem; display:flex; align-items:center; justify-content:space-between;
+      position:relative; z-index:5;
+    }
+    .f-logo { font-family:var(--serif); font-size:1.1rem; letter-spacing:.3em; color:var(--rolex-gold-lt); }
+    .f-links { display:flex; gap:2rem; }
+    .f-links a { font-size:.52rem; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); text-decoration:none; transition:color .3s; }
+    .f-links a:hover { color:var(--rolex-gold-lt); }
+    .f-copy { font-size:.52rem; letter-spacing:.15em; text-transform:uppercase; color:var(--muted); }
+
+    /* ── SCROLL REVEAL STATES ─────────────────────── */
+    .rv  { opacity:0; transform:translateY(44px); }
+    .rl  { opacity:0; transform:translateX(-55px); }
+    .rr  { opacity:0; transform:translateX(55px); }
+
+    /* ── MISC ─────────────────────────────────────── */
+    .hr { height:1px; background:rgba(0,96,57,.1); }
+    @keyframes slowSpin { to{transform:rotate(360deg)} }
+
+    @media(max-width:900px){
+      nav { padding:1.4rem 2rem; }
+      .nav-links { display:none; }
+      section { padding:6rem 2rem; }
+      #heritage .inner { grid-template-columns:1fr; gap:4rem; }
+      .specs-row { grid-template-columns:repeat(2,1fr); }
+      .feat-grid { grid-template-columns:1fr; }
+      footer { flex-direction:column; gap:1.5rem; text-align:center; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- CURSOR -->
+<div id="cur"></div>
+<div id="curR"></div>
+
+<!-- PARTICLES -->
+<canvas id="pCanvas"></canvas>
+
+<!-- NAV -->
+<nav id="nav">
+  <a href="#" class="brand">
+    <!-- Rolex-style 5-point crown SVG -->
+    <svg class="brand-crown" viewBox="0 0 100 85" xmlns="http://www.w3.org/2000/svg">
+      <path d="M50 0 L60 28 L90 28 L67 45 L76 73 L50 57 L24 73 L33 45 L10 28 L40 28 Z"/>
+    </svg>
+    <span>
+      <span class="brand-name">ROLEX</span>
+      <span class="brand-sub">Submariner Date</span>
+    </span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="#heritage">Heritage</a></li>
+    <li><a href="#specs">Specifications</a></li>
+    <li><a href="#features">Technology</a></li>
+    <li><a href="#dial-section">Design</a></li>
+  </ul>
+  <a href="#specs" class="nav-btn">Configure</a>
+</nav>
+
+<!-- ═══════════════ HERO ═══════════════ -->
+<section id="hero">
+  <canvas id="c3d"></canvas>
+  <div class="halo"></div>
+  <p class="hero-tag">Ref. 126610LN · Oystersteel</p>
+  <h1 class="hero-h1">Born<br>to <em>Dive</em></h1>
+  <p class="hero-ref">Submariner Date — 300m / 1000ft</p>
+  <div class="scroll-hint">Explore</div>
+</section>
+
+<!-- ═══════════════ HERITAGE ═══════════════ -->
+<section id="heritage">
+  <div class="inner">
+    <div class="rl">
+      <p class="eyebrow">Since 1953</p>
+      <h2 class="sec-h2">A Legend<br>Forged <em>Underwater</em></h2>
+      <div class="divider"></div>
+      <p class="sec-p">
+        Launched in 1953, the Submariner was the first divers' watch to be waterproof
+        to a depth of 100 metres. Seventy years later, it remains the definitive reference
+        in aquatic timekeeping — water-resistant to 300 metres.
+      </p>
+      <p class="sec-p" style="margin-top:1rem">
+        Its Oystersteel case and unidirectional rotatable bezel with Cerachrom insert in
+        black ceramic have become symbols of exploration trusted by professionals
+        and connoisseurs alike.
+      </p>
+    </div>
+    <div class="movement-art rr">
+      <div class="movement-glow"></div>
+      <!-- Decorative movement rotor SVG — Submariner aesthetic -->
+      <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="rg1" cx="50%" cy="50%" r="50%">
+            <stop offset="0%"   stop-color="#0a1a10" stop-opacity="1"/>
+            <stop offset="100%" stop-color="#020a05" stop-opacity="1"/>
+          </radialGradient>
+          <filter id="glow">
+            <feGaussianBlur stdDeviation="2" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <!-- Outer ring -->
+        <circle cx="200" cy="200" r="195" fill="none" stroke="#006039" stroke-width=".6" opacity=".5"/>
+        <circle cx="200" cy="200" r="182" fill="url(#rg1)"/>
+        <!-- Bezel tick marks -->
+        <g stroke="#006039" stroke-width=".8" opacity=".7" filter="url(#glow)">
+          <!-- 60 minute markers -->
+          <line x1="200" y1="8"  x2="200" y2="22"/>
+          <line x1="200" y1="378" x2="200" y2="392"/>
+          <line x1="8"   y1="200" x2="22" y2="200"/>
+          <line x1="378" y1="200" x2="392" y2="200"/>
+        </g>
+        <!-- Spoke pattern (movement rotor style) -->
+        <g stroke="#1a3a25" stroke-width="1" fill="none" opacity=".6">
+          <circle cx="200" cy="200" r="140"/>
+          <circle cx="200" cy="200" r="100"/>
+          <circle cx="200" cy="200" r="60"/>
+        </g>
+        <!-- 12 lumed hour index positions (rectangle markers) -->
+        <g fill="#c8cfc8" opacity=".55">
+          <!-- 12 o'clock — triangle -->
+          <polygon points="200,28 194,50 206,50"/>
+          <!-- 3 o'clock -->
+          <rect x="350" y="195" width="22" height="10" rx="2"/>
+          <!-- 6 o'clock -->
+          <rect x="189" y="350" width="22" height="10" rx="2" transform="rotate(90 200 355)"/>
+          <!-- 9 o'clock -->
+          <rect x="28" y="195" width="22" height="10" rx="2"/>
+        </g>
+        <!-- Mercedes hands -->
+        <!-- Hour -->
+        <g fill="#d4a843" filter="url(#glow)">
+          <rect x="196" y="100" width="8" height="88" rx="4"/>
+          <circle cx="200" cy="155" r="16" fill="none" stroke="#d4a843" stroke-width="6"/>
+          <!-- Minute -->
+          <rect x="198.5" y="55" width="3" height="130" rx="1.5" fill="#e8e8e8"/>
+          <!-- Seconds -->
+          <rect x="199.5" y="60" width="1" height="150" rx=".5" fill="#ff3300"/>
+          <circle cx="200" cy="200" r="5" fill="#d4a843"/>
+        </g>
+        <!-- Cyclops magnifier hint circle -->
+        <circle cx="260" cy="200" r="14" fill="none" stroke="#006039" stroke-width=".5" opacity=".4"/>
+        <!-- Date aperture -->
+        <rect x="250" y="192" width="20" height="16" rx="1" fill="#0a0a0c" stroke="#444" stroke-width=".5"/>
+        <text x="260" y="204" text-anchor="middle" font-family="Montserrat,sans-serif" font-size="8" fill="#ccc" font-weight="300">28</text>
+        <!-- SUBMARINER text -->
+        <text x="200" y="245" text-anchor="middle" font-family="Montserrat,sans-serif" font-size="8" fill="#888" letter-spacing="4" font-weight="200">SUBMARINER</text>
+        <text x="200" y="256" text-anchor="middle" font-family="Montserrat,sans-serif" font-size="6" fill="#555" letter-spacing="2" font-weight="100">DATE</text>
+        <!-- Crown logo -->
+        <text x="200" y="178" text-anchor="middle" font-family="Georgia,serif" font-size="12" fill="#a27c1a" opacity=".8">♛</text>
+        <text x="200" y="192" text-anchor="middle" font-family="Montserrat,sans-serif" font-size="7" fill="#888" letter-spacing="5" font-weight="200">ROLEX</text>
+        <!-- Center hub -->
+        <circle cx="200" cy="200" r="6" fill="#1a1a1a" stroke="#c9a84c" stroke-width=".8"/>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<div class="hr"></div>
+
+<!-- ═══════════════ SPECS ═══════════════ -->
+<section id="specs">
+  <div class="inner">
+    <p class="eyebrow rv">Technical Specifications</p>
+    <h2 class="sec-h2 rv">Calibre <em>3235</em></h2>
+    <div class="specs-row">
+      <div class="spec rv">
+        <div class="spec-n">300<span class="spec-u">m</span></div>
+        <div class="spec-l">Water Resistance</div>
+      </div>
+      <div class="spec rv">
+        <div class="spec-n">70<span class="spec-u">h</span></div>
+        <div class="spec-l">Power Reserve</div>
+      </div>
+      <div class="spec rv">
+        <div class="spec-n">28<span class="spec-u">k</span></div>
+        <div class="spec-l">Vibrations / Hour</div>
+      </div>
+      <div class="spec rv">
+        <div class="spec-n">41<span class="spec-u">mm</span></div>
+        <div class="spec-l">Case Diameter</div>
+      </div>
+      <div class="spec rv">
+        <div class="spec-n">14</div>
+        <div class="spec-l">Patents Held</div>
+      </div>
+      <div class="spec rv">
+        <div class="spec-n">±2<span class="spec-u">s/d</span></div>
+        <div class="spec-l">Chronometric Precision</div>
+      </div>
+      <div class="spec rv">
+        <div class="spec-n">Si</div>
+        <div class="spec-l">Chronergy Escapement</div>
+      </div>
+      <div class="spec rv">
+        <div class="spec-n">904<span class="spec-u">L</span></div>
+        <div class="spec-l">Oystersteel Grade</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="hr"></div>
+
+<!-- ═══════════════ FEATURES ═══════════════ -->
+<section id="features">
+  <div class="inner">
+    <p class="eyebrow rv">Rolex Technology</p>
+    <h2 class="sec-h2 rv">Engineered for<br><em>Extremes</em></h2>
+    <div class="feat-grid" style="margin-top:4rem">
+      <div class="feat-card rv">
+        <div class="feat-icon">
+          <svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="18"/><path d="M24 6 v6 M24 36 v6 M6 24 h6 M36 24 h6"/></svg>
+        </div>
+        <div class="feat-title">Cerachrom Bezel</div>
+        <div class="feat-desc">Virtually scratch-proof ceramic insert moulded and fired at over 1500°C. Its colour remains stable even under intense UV exposure — guaranteed for generations.</div>
+      </div>
+      <div class="feat-card rv">
+        <div class="feat-icon">
+          <svg viewBox="0 0 48 48"><path d="M24 4 C12 4 4 12 4 24 C4 36 12 44 24 44 C36 44 44 36 44 24"/><path d="M30 4 L44 4 L44 18"/></svg>
+        </div>
+        <div class="feat-title">Oyster Architecture</div>
+        <div class="feat-desc">The Oyster case — invented by Rolex in 1926 — forms a hermetic capsule protecting the movement. The Triplock winding crown seals the case to 300 metres.</div>
+      </div>
+      <div class="feat-card rv">
+        <div class="feat-icon">
+          <svg viewBox="0 0 48 48"><path d="M8 24 h32 M24 8 v32 M12 12 L36 36 M36 12 L12 36"/></svg>
+        </div>
+        <div class="feat-title">Chromalight Lume</div>
+        <div class="feat-desc">Long-lasting blue luminescent material applied to hour markers and Mercedes hands. Emits light twice as long as standard luminescent material in complete darkness.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ DIAL CANVAS ═══════════════ -->
+<section id="dial-section">
+  <p class="eyebrow rv">Submariner Dial</p>
+  <h2 class="sec-h2 rv" style="text-align:center">The Face of<br><em>Exploration</em></h2>
+  <div class="dial-canvas-wrap rv">
+    <canvas id="dialCanvas" width="640" height="640"></canvas>
+    <div class="dial-ring"></div>
+  </div>
+  <p class="sec-p rv" style="margin:0 auto; text-align:center">
+    The Submariner's black lacquer dial with Chromalight hour markers and Mercedes hands —
+    instantly legible at depth, unmistakable anywhere.
+  </p>
+</section>
+
+<!-- ═══════════════ QUOTE ═══════════════ -->
+<section id="quote">
+  <span class="quote-mark rv">"</span>
+  <blockquote class="quote-body rv">
+    A watch is not merely a machine for measuring time.
+    It is a statement about where you have been and what you are willing to face.
+  </blockquote>
+  <p class="quote-attr rv">— Hans Wilsdorf, Founder · Rolex SA</p>
+</section>
+
+<!-- ═══════════════ FOOTER ═══════════════ -->
+<footer>
+  <div class="f-logo">ROLEX</div>
+  <div class="f-links">
+    <a href="#">Privacy</a>
+    <a href="#">Boutiques</a>
+    <a href="#">Warranty</a>
+    <a href="#">Care</a>
+  </div>
+  <p class="f-copy">© 2024 Rolex SA · Geneva, Switzerland</p>
+</footer>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     SCRIPTS
+═══════════════════════════════════════════════════════════ -->
+<script>
+/* ─────────────────────────────────────────────
+   1. CUSTOM CURSOR
+───────────────────────────────────────────── */
+const cur = document.getElementById('cur');
+const curR= document.getElementById('curR');
+document.addEventListener('mousemove', e => {
+  cur.style.left = curR.style.left = e.clientX+'px';
+  cur.style.top  = curR.style.top  = e.clientY+'px';
+});
+document.querySelectorAll('a,button,.feat-card,.spec').forEach(el=>{
+  el.addEventListener('mouseenter',()=>{ curR.style.width=curR.style.height='52px'; curR.style.borderColor='rgba(0,96,57,.8)'; });
+  el.addEventListener('mouseleave',()=>{ curR.style.width=curR.style.height='32px'; curR.style.borderColor='rgba(164,124,26,.45)'; });
+});
+
+/* ─────────────────────────────────────────────
+   2. PARTICLE BACKGROUND
+───────────────────────────────────────────── */
+(function(){
+  const cv=document.getElementById('pCanvas'),ctx=cv.getContext('2d');
+  let W,H,pts;
+  function resize(){ W=cv.width=innerWidth; H=cv.height=innerHeight; }
+  addEventListener('resize',resize); resize();
+  pts=Array.from({length:100},()=>({ x:Math.random()*W, y:Math.random()*H, r:Math.random()*1+.2, vx:(Math.random()-.5)*.12, vy:(Math.random()-.5)*.12, a:Math.random() }));
+  (function frame(){
+    ctx.clearRect(0,0,W,H);
+    pts.forEach(p=>{
+      p.x+=p.vx; p.y+=p.vy;
+      if(p.x<0)p.x=W; if(p.x>W)p.x=0;
+      if(p.y<0)p.y=H; if(p.y>H)p.y=0;
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      ctx.fillStyle=`rgba(0,96,57,${p.a*.35})`; ctx.fill();
+    });
+    requestAnimationFrame(frame);
+  })();
+})();
+
+/* ─────────────────────────────────────────────
+   3. THREE.JS — ROLEX SUBMARINER 3D MODEL
+   
+   Built entirely from Three.js primitives to
+   recreate the iconic Submariner look:
+   - Oyster case (brushed + polished Oystersteel)
+   - Black ceramic Cerachrom bezel with pip marker
+   - Black dial with 3D lume indices
+   - Mercedes hands (hour/minute/second)
+   - Cyclops date lens at 3 o'clock
+   - Oyster bracelet with integrated links
+   - Triplock crown at 4 o'clock
+───────────────────────────────────────────── */
+(function initThree(){
+  const canvas   = document.getElementById('c3d');
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias:true, alpha:true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type    = THREE.PCFSoftShadowMap;
+  renderer.toneMapping       = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.6;
+
+  const scene  = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(38, 1, 0.01, 50);
+  camera.position.set(0, 0, 7);
+
+  function resize(){
+    const w=canvas.clientWidth, h=canvas.clientHeight;
+    renderer.setSize(w,h,false);
+    camera.aspect=w/h; camera.updateProjectionMatrix();
+  }
+  addEventListener('resize',resize); resize();
+
+  /* ── MATERIALS ─────────────────────────────────────── */
+
+  // Oystersteel — brushed (anisotropic-style with high metalness)
+  const steelMat = new THREE.MeshStandardMaterial({
+    color:0xb8c0c8, metalness:.97, roughness:.22
+  });
+  // Polished steel (for lugs, bracelet centre links)
+  const polMat = new THREE.MeshStandardMaterial({
+    color:0xd0d8e0, metalness:1, roughness:.06
+  });
+  // Black ceramic bezel
+  const bezMat = new THREE.MeshStandardMaterial({
+    color:0x050607, metalness:.5, roughness:.35
+  });
+  // Black dial
+  const dialMat = new THREE.MeshStandardMaterial({
+    color:0x040506, metalness:.25, roughness:.65
+  });
+  // Sapphire crystal glass
+  const crystalMat = new THREE.MeshPhysicalMaterial({
+    color:0xd0e8ff, metalness:0, roughness:0,
+    transmission:.92, opacity:.1, transparent:true,
+    thickness:.3, ior:1.76,
+    reflectivity:.5
+  });
+  // Chromalight lume (glowing blue-white)
+  const lumeMat = new THREE.MeshStandardMaterial({
+    color:0xc8d8e8, metalness:.1, roughness:.5,
+    emissive:0x3060a0, emissiveIntensity:.6
+  });
+  // Mercedes hand gold (Rolesor)
+  const handMat = new THREE.MeshStandardMaterial({
+    color:0xd4d8dc, metalness:.97, roughness:.08
+  });
+  // Second hand red
+  const secMat = new THREE.MeshStandardMaterial({
+    color:0xdd2200, metalness:.8, roughness:.2, emissive:0x550000, emissiveIntensity:.3
+  });
+  // Rubber/leather strap
+  const strapMat = new THREE.MeshStandardMaterial({
+    color:0x090908, metalness:.03, roughness:.92
+  });
+  // Bezel pip triangle (white gold lume)
+  const pipMat = new THREE.MeshStandardMaterial({
+    color:0xe8e8e8, metalness:.9, roughness:.1,
+    emissive:0xaaaaaa, emissiveIntensity:.3
+  });
+  // Date numeral background
+  const dateBgMat = new THREE.MeshStandardMaterial({ color:0xfafafa, metalness:0, roughness:.8 });
+
+  /* ── MAIN GROUP ──────────────────────────────────── */
+  const watch = new THREE.Group();
+  scene.add(watch);
+
+  /* ── OYSTER CASE ─────────────────────────────────── */
+  // Main case body — slightly cushion-shaped cylinder
+  const caseGeo = new THREE.CylinderGeometry(1.05,1.05,.32,80);
+  const caseM   = new THREE.Mesh(caseGeo, steelMat);
+  caseM.castShadow=true;
+  watch.add(caseM);
+
+  // Middle band (polished centre)
+  const bandGeo = new THREE.CylinderGeometry(1.06,1.06,.10,80);
+  const bandM   = new THREE.Mesh(bandGeo, polMat);
+  watch.add(bandM);
+
+  // Case back (flat disc)
+  const backGeo = new THREE.CylinderGeometry(1.0,1.0,.02,80);
+  const backM   = new THREE.Mesh(backGeo, steelMat);
+  backM.position.y = -.17;
+  watch.add(backM);
+
+  /* ── CERACHROM BEZEL (Black Ceramic) ─────────────── */
+  const bezGeo  = new THREE.CylinderGeometry(1.18,1.18,.10,80);
+  const bezM    = new THREE.Mesh(bezGeo, bezMat);
+  bezM.position.y = .21;
+  watch.add(bezM);
+
+  // Bezel top face (thinner, slightly inset)
+  const bezTopGeo = new THREE.RingGeometry(1.07,1.18,.04,.04,80);
+
+  // Bezel minute/60-division groove ring
+  const bezRingGeo = new THREE.TorusGeometry(1.125,.012,8,80);
+  const bezRingM   = new THREE.Mesh(bezRingGeo, steelMat);
+  bezRingM.rotation.x = Math.PI/2;
+  bezRingM.position.y = .26;
+  watch.add(bezRingM);
+
+  // PIP marker (triangle at 12 o'clock on bezel)
+  const pipGeo = new THREE.ConeGeometry(.035,.07,3);
+  const pipM   = new THREE.Mesh(pipGeo, pipMat);
+  pipM.position.set(0,.265,1.135);
+  pipM.rotation.x = Math.PI/2;
+  watch.add(pipM);
+
+  // Pip surround ring (platinum)
+  const pipRingGeo = new THREE.TorusGeometry(.05,.012,8,24);
+  const pipRingM   = new THREE.Mesh(pipRingGeo, polMat);
+  pipRingM.position.set(0,.262,1.125);
+  pipRingM.rotation.x = Math.PI/2;
+  watch.add(pipRingM);
+
+  /* ── LUGS (4 Oyster lugs, classic rectangular form) ── */
+  function makeLug(x,z,rotY){
+    const g = new THREE.CylinderGeometry(.09,.11,.45,12);
+    const m = new THREE.Mesh(g, steelMat);
+    m.position.set(x,-.04,z);
+    m.rotation.y = rotY;
+    m.castShadow = true;
+    watch.add(m);
+    // polished top strip
+    const pG = new THREE.BoxGeometry(.06,.46,.035);
+    const pM = new THREE.Mesh(pG, polMat);
+    pM.position.set(x,-.04,z + (z>0?.04:-.04));
+    pM.rotation.y = rotY;
+    watch.add(pM);
+  }
+  makeLug(-.72,-.94,-.35);
+  makeLug( .72,-.94, .35);
+  makeLug(-.72, .94, .35);
+  makeLug( .72, .94,-.35);
+
+  /* ── OYSTER BRACELET ─────────────────────────────── */
+  // Three-link Oyster bracelet: centre link (polished) + two outer (brushed)
+  function braceletSegment(yOff){
+    // centre link
+    const cG = new THREE.BoxGeometry(.36,.07,.28);
+    const cM = new THREE.Mesh(cG, polMat);
+    cM.position.set(0,yOff,0);
+    watch.add(cM);
+    // outer links
+    [-1,1].forEach(s=>{
+      const oG = new THREE.BoxGeometry(.28,.07,.28);
+      const oM = new THREE.Mesh(oG, steelMat);
+      oM.position.set(s*.32,yOff,0);
+      watch.add(oM);
+    });
+  }
+  // Build 6 bracelet rows top/bottom
+  for(let i=1;i<=6;i++){
+    braceletSegment(1.02 + i*.26);
+    braceletSegment(-1.02 - i*.26);
+  }
+  // Clasp block
+  const claspG = new THREE.BoxGeometry(.98,.12,.28);
+  const claspM = new THREE.Mesh(claspG, steelMat);
+  claspM.position.set(0,-2.7,0);
+  watch.add(claspM);
+  const claspLogoG = new THREE.BoxGeometry(.6,.04,.06);
+  const claspLogoM = new THREE.Mesh(claspLogoG, polMat);
+  claspLogoM.position.set(0,-2.7,.14);
+  watch.add(claspLogoM);
+
+  /* ── TRIPLOCK CROWN (at 4 o'clock position, ~2:30 angle) ── */
+  const crownRot = -Math.PI*1.35; // 4 o'clock
+  const crownX   = Math.cos(crownRot)*1.12;
+  const crownZ   = Math.sin(crownRot)*1.12;
+  // Crown tube
+  const crownTubeG = new THREE.CylinderGeometry(.055,.055,.28,16);
+  const crownTubeM = new THREE.Mesh(crownTubeG, steelMat);
+  crownTubeM.rotation.z = Math.PI/2;
+  crownTubeM.position.set(crownX,0,crownZ);
+  crownTubeM.rotation.y = crownRot;
+  watch.add(crownTubeM);
+  // Crown head (knurled disc)
+  const crownHeadG = new THREE.CylinderGeometry(.085,.085,.065,24);
+  const crownHeadM = new THREE.Mesh(crownHeadG, steelMat);
+  crownHeadM.rotation.z = Math.PI/2;
+  crownHeadM.position.set(crownX+Math.cos(crownRot)*.25, 0, crownZ+Math.sin(crownRot)*.25);
+  watch.add(crownHeadM);
+
+  /* ── BLACK DIAL ──────────────────────────────────── */
+  const dialGeo = new THREE.CylinderGeometry(.98,.98,.008,80);
+  const dialM   = new THREE.Mesh(dialGeo, dialMat);
+  dialM.position.y = .145;
+  watch.add(dialM);
+
+  /* ── LUME HOUR INDICES ───────────────────────────── */
+  // Submariner uses rectangular bar indices + triangle at 12 + circles at 3,6,9
+  function lumeIndex(angle, shape='rect'){
+    const r = .73; // radius from center
+    const rad = (angle/360)*Math.PI*2;
+    const x = Math.sin(rad)*r;
+    const z = Math.cos(rad)*r;
+    let geo;
+    if(shape==='tri'){
+      geo = new THREE.ConeGeometry(.05,.12,3);
+    } else if(shape==='circle'){
+      geo = new THREE.CylinderGeometry(.045,.045,.015,24);
+    } else {
+      geo = new THREE.BoxGeometry(.055,.015,.14);
+    }
+    const m = new THREE.Mesh(geo, lumeMat);
+    m.position.set(x,.152,z);
+    m.rotation.y = -rad;
+    watch.add(m);
+  }
+  // 12 o'clock — triangle
+  lumeIndex(0,'tri');
+  // 3,6,9 o'clock — double circle dots
+  [90,180,270].forEach(a=>lumeIndex(a,'circle'));
+  // remaining hours — rectangles
+  [30,60,120,150,210,240,300,330].forEach(a=>lumeIndex(a,'rect'));
+
+  /* ── DATE APERTURE (3 o'clock Cyclops) ─────────── */
+  // White date disc
+  const dateBg  = new THREE.BoxGeometry(.17,.015,.13);
+  const dateBgM = new THREE.Mesh(dateBg, dateBgMat);
+  dateBgM.position.set(.62,.155,0);
+  watch.add(dateBgM);
+
+  /* ── MERCEDES HANDS ──────────────────────────────── */
+  const handGroup = new THREE.Group();
+  handGroup.position.y = .16;
+  watch.add(handGroup);
+
+  // ── HOUR HAND (Mercedes wheel style)
+  const hHour = new THREE.Group();
+  // Stem
+  const hourStemG = new THREE.BoxGeometry(.06,.01,.38);
+  hHour.add(new THREE.Mesh(hourStemG, handMat));
+  // Mercedes wheel (open circle)
+  const wheelGeo = new THREE.TorusGeometry(.09,.022,8,32);
+  const wheelM   = new THREE.Mesh(wheelGeo, handMat);
+  wheelM.rotation.x = Math.PI/2;
+  wheelM.position.z = -.1;
+  hHour.add(wheelM);
+  // Two spokes filling the wheel (Mercedes symbol)
+  [-.09,0,.09].forEach(x=>{
+    const sG = new THREE.BoxGeometry(.018,.01,.16);
+    const sM = new THREE.Mesh(sG, handMat);
+    sM.position.set(x,0,-.18);
+    hHour.add(sM);
+  });
+  // Point tip
+  const hourTipG = new THREE.ConeGeometry(.03,.12,4);
+  const hourTipM = new THREE.Mesh(hourTipG, handMat);
+  hourTipM.rotation.x = -Math.PI/2;
+  hourTipM.position.z = .28;
+  hHour.add(hourTipM);
+  hHour.position.z = .05; // slight forward offset of pivot
+  handGroup.add(hHour);
+
+  // ── MINUTE HAND (longer, thinner)
+  const hMin = new THREE.Group();
+  const minBodyG = new THREE.BoxGeometry(.04,.01,.62);
+  hMin.add(new THREE.Mesh(minBodyG, handMat));
+  const minTipG = new THREE.ConeGeometry(.02,.10,4);
+  const minTipM = new THREE.Mesh(minTipG, handMat);
+  minTipM.rotation.x = -Math.PI/2;
+  minTipM.position.z = .36;
+  hMin.add(minTipM);
+  handGroup.add(hMin);
+
+  // ── SECOND HAND (long slim, red lollipop tail)
+  const hSec = new THREE.Group();
+  const secShaftG = new THREE.BoxGeometry(.015,.01,.88);
+  const secShaftM = new THREE.Mesh(secShaftG, secMat);
+  secShaftM.position.z = .06;
+  hSec.add(secShaftM);
+  // Red tail counterweight
+  const tailG = new THREE.BoxGeometry(.025,.01,.2);
+  const tailM = new THREE.Mesh(tailG, secMat);
+  tailM.position.z = -.26;
+  hSec.add(tailM);
+  // Red lollipop
+  const lolliG = new THREE.CylinderGeometry(.038,.038,.012,20);
+  const lolliM = new THREE.Mesh(lolliG, secMat);
+  lolliM.rotation.x = Math.PI/2;
+  lolliM.position.z = -.38;
+  hSec.add(lolliM);
+  handGroup.add(hSec);
+
+  // Center cap
+  const capG = new THREE.CylinderGeometry(.04,.04,.025,24);
+  handGroup.add(new THREE.Mesh(capG, steelMat));
+
+  /* ── SAPPHIRE CRYSTAL ────────────────────────────── */
+  // Flat disc with slight dome
+  const crystGeo = new THREE.CylinderGeometry(1.0,1.0,.04,80);
+  const crystM   = new THREE.Mesh(crystGeo, crystalMat);
+  crystM.position.y = .175;
+  watch.add(crystM);
+
+  // Cyclops lens (magnifier bubble at 3 o'clock)
+  const cyclopsGeo = new THREE.SphereGeometry(.085,.32,.32,0,Math.PI*2,0,Math.PI*.5);
+  const cyclopsM   = new THREE.Mesh(cyclopsGeo, crystalMat);
+  cyclopsM.rotation.x = Math.PI;
+  cyclopsM.position.set(.62,.195,0);
+  watch.add(cyclopsM);
+
+  /* ── LIGHTS (cinematic 3-point + fill) ──────────── */
+  // Key: warm top-left
+  const key = new THREE.DirectionalLight(0xfff5e8, 4.5);
+  key.position.set(-3,5,4);
+  key.castShadow = true;
+  scene.add(key);
+
+  // Fill: cool right
+  const fill = new THREE.DirectionalLight(0xc0d8ff, 1.2);
+  fill.position.set(4,1,-2);
+  scene.add(fill);
+
+  // Rim: green/teal from below (Rolex green)
+  const rim = new THREE.PointLight(0x004030, 3.5, 12);
+  rim.position.set(0,-4,2);
+  scene.add(rim);
+
+  // Accent: gold shimmer top
+  const accent = new THREE.PointLight(0xd4a843, 2.0, 10);
+  accent.position.set(2,5,-2);
+  scene.add(accent);
+
+  // Ambient
+  scene.add(new THREE.AmbientLight(0x080c0a, 4));
+
+  /* ── INITIAL POSE ─────────────────────────────────── */
+  watch.rotation.x = 0.28;   // slight tilt forward
+  watch.rotation.z = -0.06;  // minimal lean
+
+  /* ── GSAP SCROLL-DRIVEN ROTATION ─────────────────── */
+  gsap.registerPlugin(ScrollTrigger);
+  ScrollTrigger.create({
+    trigger:'#hero', start:'top top', end:'bottom top', scrub:2,
+    onUpdate: self=>{
+      watch.rotation.y = self.progress * Math.PI * 3;   // 1.5 full turns
+      watch.position.y = self.progress * -2.0;          // descend
+      camera.position.z = 7 - self.progress * 2.5;     // zoom
+    }
+  });
+
+  /* ── REAL-TIME HAND MOVEMENT ─────────────────────── */
+  let autoSpin = true;
+  addEventListener('scroll',()=>{ autoSpin=false; clearTimeout(window._st); window._st=setTimeout(()=>autoSpin=true,1500); });
+
+  const clock = new THREE.Clock();
+  let floatT = 0;
+
+  function animate(){
+    requestAnimationFrame(animate);
+    floatT += .006;
+
+    // Gentle floating bob
+    watch.position.y += (Math.sin(floatT)*.0006);
+
+    // Auto idle rotation
+    if(autoSpin) watch.rotation.y += .004;
+
+    // Sync hands to real time
+    const now = new Date();
+    const s   = now.getSeconds() + now.getMilliseconds()/1000;
+    const m   = now.getMinutes() + s/60;
+    const h   = (now.getHours()%12) + m/60;
+
+    hSec.rotation.y  = -(s/60)*Math.PI*2;
+    hMin.rotation.y  = -(m/60)*Math.PI*2;
+    hHour.rotation.y = -(h/12)*Math.PI*2;
+
+    // Animate accent light shimmer
+    accent.intensity = 1.8 + Math.sin(floatT*2.1)*.4;
+
+    renderer.render(scene, camera);
+  }
+  animate();
+})();
+
+/* ─────────────────────────────────────────────
+   4. 2D DIAL CANVAS — high-res Submariner dial
+───────────────────────────────────────────── */
+(function drawDial(){
+  const cv  = document.getElementById('dialCanvas');
+  const ctx = cv.getContext('2d');
+  const cx  = 320, cy = 320, R = 280;
+
+  // Background
+  const bg = ctx.createRadialGradient(cx,cy,60,cx,cy,R);
+  bg.addColorStop(0,'#0a0d0b');
+  bg.addColorStop(1,'#020304');
+  ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2);
+  ctx.fillStyle=bg; ctx.fill();
+
+  // Chapter ring (rehaut) — thin inner bezel
+  ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2);
+  ctx.strokeStyle='#1a2020'; ctx.lineWidth=18; ctx.stroke();
+  ctx.beginPath(); ctx.arc(cx,cy,R-9,0,Math.PI*2);
+  ctx.strokeStyle='#0d1515'; ctx.lineWidth=1; ctx.stroke();
+
+  // ── HOUR INDICES ──────────────────────────────────
+  function drawIndex(deg, type){
+    const rad = (deg-90)*Math.PI/180;
+    const r1  = 220, r2 = 250;
+    const mx  = cx+Math.cos(rad)*(r1+r2)/2;
+    const my  = cy+Math.sin(rad)*(r1+r2)/2;
+
+    ctx.save();
+    ctx.translate(mx,my);
+    ctx.rotate(rad+Math.PI/2);
+
+    if(type==='tri'){
+      // Triangle at 12
+      ctx.beginPath(); ctx.moveTo(-14,14); ctx.lineTo(14,14); ctx.lineTo(0,-16); ctx.closePath();
+      ctx.fillStyle='#c8d8e8'; ctx.fill();
+      ctx.shadowColor='#3060a0'; ctx.shadowBlur=8; ctx.fill();
+    } else if(type==='dot'){
+      // Dots at 3,6,9
+      [-10,10].forEach(ox=>{
+        ctx.beginPath(); ctx.arc(ox,0,8,0,Math.PI*2);
+        ctx.fillStyle='#c8d8e8'; ctx.fill();
+        ctx.shadowColor='#3060a0'; ctx.shadowBlur=10; ctx.fill();
+      });
+    } else {
+      // Rectangle bar
+      ctx.fillStyle='#c8d8e8';
+      ctx.shadowColor='#3060a0'; ctx.shadowBlur=8;
+      ctx.beginPath(); ctx.roundRect(-10,-30,20,60,3); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  drawIndex(0,'tri');
+  drawIndex(90,'dot');
+  drawIndex(180,'dot');
+  drawIndex(270,'dot');
+  [30,60,120,150,210,240,300,330].forEach(a=>drawIndex(a,'bar'));
+
+  // ── MINUTE TRACK (outer dots) ─────────────────────
+  for(let i=0;i<60;i++){
+    const r2 = (i%5===0)?R-5:R-9;
+    const rad=(i/60)*Math.PI*2-Math.PI/2;
+    ctx.beginPath();
+    ctx.moveTo(cx+Math.cos(rad)*(R-18), cy+Math.sin(rad)*(R-18));
+    ctx.lineTo(cx+Math.cos(rad)*r2, cy+Math.sin(rad)*r2);
+    ctx.strokeStyle = i%5===0 ? '#445544' : '#2a3a2a';
+    ctx.lineWidth   = i%5===0 ? 2.5 : 1;
+    ctx.stroke();
+  }
+
+  // ── BRAND TEXT ─────────────────────────────────────
+  ctx.textAlign='center';
+
+  // Crown logo (♛ placeholder)
+  ctx.font='bold 28px Georgia';
+  ctx.fillStyle='#a27c1a';
+  ctx.fillText('♛',cx,cy-54);
+
+  ctx.font='300 22px Montserrat,sans-serif';
+  ctx.letterSpacing='6px';
+  ctx.fillStyle='#aaaaaa';
+  ctx.fillText('ROLEX',cx,cy-28);
+
+  ctx.font='100 12px Montserrat,sans-serif';
+  ctx.letterSpacing='3px';
+  ctx.fillStyle='#555';
+  ctx.fillText('OYSTER PERPETUAL',cx,cy-10);
+
+  ctx.font='700 16px Montserrat,sans-serif';
+  ctx.fillStyle='#bbb';
+  ctx.letterSpacing='2px';
+  ctx.fillText('SUBMARINER',cx,cy+12);
+
+  ctx.font='200 10px Montserrat,sans-serif';
+  ctx.fillStyle='#444';
+  ctx.letterSpacing='4px';
+  ctx.fillText('DATE',cx,cy+28);
+
+  ctx.font='200 9px Montserrat,sans-serif';
+  ctx.fillStyle='#334433';
+  ctx.letterSpacing='1px';
+  ctx.fillText('300m = 1000ft',cx,cy+48);
+
+  // ── DATE WINDOW ────────────────────────────────────
+  // At 3 o'clock
+  const dx=cx+170, dy=cy+4;
+  // Cyclops glow
+  const cg=ctx.createRadialGradient(dx,dy,0,dx,dy,30);
+  cg.addColorStop(0,'rgba(0,96,57,.15)'); cg.addColorStop(1,'transparent');
+  ctx.fillStyle=cg; ctx.fillRect(dx-30,dy-30,60,60);
+  // Frame
+  ctx.fillStyle='#f5f5f2';
+  ctx.beginPath(); ctx.roundRect(dx-17,dy-14,34,28,2); ctx.fill();
+  ctx.strokeStyle='#999'; ctx.lineWidth=.5; ctx.stroke();
+  // Date number
+  ctx.font='700 18px Montserrat,sans-serif';
+  ctx.fillStyle='#111'; ctx.textAlign='center'; ctx.letterSpacing='0px';
+  ctx.fillText('28',dx,dy+7);
+
+  // ── HANDS ──────────────────────────────────────────
+  function drawHand(deg, len, width, color, shadow){
+    const rad=(deg-90)*Math.PI/180;
+    ctx.save();
+    ctx.shadowColor=shadow; ctx.shadowBlur=8;
+    ctx.strokeStyle=color; ctx.lineWidth=width; ctx.lineCap='round';
+    ctx.beginPath();
+    ctx.moveTo(cx-Math.cos(rad)*40, cy-Math.sin(rad)*40);
+    ctx.lineTo(cx+Math.cos(rad)*len, cy+Math.sin(rad)*len);
+    ctx.stroke();
+    ctx.restore();
+  }
+  // Current time
+  const now=new Date();
+  const s=(now.getSeconds()+now.getMilliseconds()/1000)/60*360;
+  const mi=(now.getMinutes()+now.getSeconds()/60)/60*360;
+  const hr=((now.getHours()%12)+now.getMinutes()/60)/12*360;
+
+  // Hour hand with Mercedes style
+  const hRad=(hr-90)*Math.PI/180;
+  ctx.save();
+  ctx.translate(cx,cy); ctx.rotate(hRad);
+  // Mercedes wheel
+  ctx.strokeStyle='#d4d8dc'; ctx.lineWidth=5; ctx.lineCap='round';
+  ctx.shadowColor='#000'; ctx.shadowBlur=6;
+  ctx.beginPath(); ctx.arc(0,-60,22,0,Math.PI*2); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0,-82); ctx.lineTo(0,-38); ctx.stroke(); // spoke
+  ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(0,-160); ctx.lineWidth=10; ctx.stroke(); // stem
+  ctx.restore();
+
+  // Minute hand
+  drawHand(mi, 200, 6, '#d4d8dc','#000');
+
+  // Second hand
+  const sRad=(s/60*360-90)*Math.PI/180;
+  ctx.save();
+  ctx.translate(cx,cy); ctx.rotate(sRad);
+  ctx.strokeStyle='#dd2200'; ctx.lineWidth=3; ctx.lineCap='round';
+  ctx.shadowColor='#ff0000'; ctx.shadowBlur=6;
+  ctx.beginPath(); ctx.moveTo(0,60); ctx.lineTo(0,-230); ctx.stroke();
+  // Lollipop
+  ctx.beginPath(); ctx.arc(0,80,15,0,Math.PI*2); ctx.fillStyle='#dd2200'; ctx.fill();
+  ctx.restore();
+
+  // Center cap
+  ctx.beginPath(); ctx.arc(cx,cy,10,0,Math.PI*2);
+  ctx.fillStyle='#b0b8c0'; ctx.fill();
+  ctx.strokeStyle='#666'; ctx.lineWidth=1; ctx.stroke();
+
+  // ── Animate second hand
+  function tickDial(){
+    // Redraw just the hand layer by clearing & redrawing
+    // Full redraw for smooth animation
+    drawDial();
+  }
+  // Only tick every second for performance (dial is mostly static)
+  setInterval(()=>{ drawDial(); }, 1000);
+})();
+
+/* ─────────────────────────────────────────────
+   5. GSAP PAGE-LOAD ANIMATION
+───────────────────────────────────────────── */
+gsap.registerPlugin(ScrollTrigger);
+gsap.set('.hero-tag',{y:20});
+gsap.set('.hero-h1',{y:50,scale:.95});
+gsap.set('.hero-ref',{y:16});
+
+const tl=gsap.timeline({defaults:{ease:'power3.out'}});
+tl.to('#nav',      {opacity:1, duration:1.2})
+  .to('.hero-tag', {opacity:1, y:0, duration:.9}, '-=.5')
+  .to('.hero-h1',  {opacity:1, y:0, scale:1, duration:1.2}, '-=.6')
+  .to('.hero-ref', {opacity:1, y:0, duration:.8}, '-=.6');
+
+/* ─────────────────────────────────────────────
+   6. SCROLL REVEAL
+───────────────────────────────────────────── */
+document.querySelectorAll('.rv').forEach(el=>{
+  gsap.fromTo(el,{opacity:0,y:48},{
+    opacity:1,y:0,duration:1,ease:'power3.out',
+    scrollTrigger:{trigger:el,start:'top 86%',toggleActions:'play none none reverse'}
+  });
+});
+document.querySelectorAll('.rl').forEach(el=>{
+  gsap.fromTo(el,{opacity:0,x:-60},{
+    opacity:1,x:0,duration:1.1,ease:'power3.out',
+    scrollTrigger:{trigger:el,start:'top 82%'}
+  });
+});
+document.querySelectorAll('.rr').forEach(el=>{
+  gsap.fromTo(el,{opacity:0,x:60},{
+    opacity:1,x:0,duration:1.1,ease:'power3.out',
+    scrollTrigger:{trigger:el,start:'top 82%'}
+  });
+});
+// Stagger spec cards
+gsap.fromTo('.spec',{opacity:0,y:35},{
+  opacity:1,y:0,stagger:.1,duration:.9,ease:'power2.out',
+  scrollTrigger:{trigger:'.specs-row',start:'top 80%'}
+});
+// Feature cards
+gsap.fromTo('.feat-card',{opacity:0,y:50},{
+  opacity:1,y:0,stagger:.18,duration:1,ease:'power3.out',
+  scrollTrigger:{trigger:'.feat-grid',start:'top 80%'}
+});
+// Parallax halo
+gsap.to('.halo',{
+  y:-140,ease:'none',
+  scrollTrigger:{trigger:'#hero',start:'top top',end:'bottom top',scrub:true}
+});
+</script>
+</body>
+</html>
